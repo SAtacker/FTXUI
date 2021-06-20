@@ -19,24 +19,24 @@
 namespace ftxui {
 
 namespace {
-static const wchar_t* BOLD_SET = L"\x1B[1m";
-static const wchar_t* BOLD_RESET = L"\x1B[22m";  // Can't use 21 here.
+static const char BOLD_SET[] = "\x1B[1m";
+static const char BOLD_RESET[] = "\x1B[22m";  // Can't use 21 here.
 
-static const wchar_t* DIM_SET = L"\x1B[2m";
-static const wchar_t* DIM_RESET = L"\x1B[22m";
+static const char DIM_SET[] = "\x1B[2m";
+static const char DIM_RESET[] = "\x1B[22m";
 
-static const wchar_t* UNDERLINED_SET = L"\x1B[4m";
-static const wchar_t* UNDERLINED_RESET = L"\x1B[24m";
+static const char UNDERLINED_SET[] = "\x1B[4m";
+static const char UNDERLINED_RESET[] = "\x1B[24m";
 
-static const wchar_t* BLINK_SET = L"\x1B[5m";
-static const wchar_t* BLINK_RESET = L"\x1B[25m";
+static const char BLINK_SET[] = "\x1B[5m";
+static const char BLINK_RESET[] = "\x1B[25m";
 
-static const wchar_t* INVERTED_SET = L"\x1B[7m";
-static const wchar_t* INVERTED_RESET = L"\x1B[27m";
+static const char INVERTED_SET[] = "\x1B[7m";
+static const char INVERTED_RESET[] = "\x1B[27m";
 
-static const char* MOVE_LEFT = "\r";
-static const char* MOVE_UP = "\x1B[1A";
-static const char* CLEAR_LINE = "\x1B[2K";
+static const char MOVE_LEFT[] = "\r";
+static const char MOVE_UP[] = "\x1B[1A";
+static const char CLEAR_LINE[] = "\x1B[2K";
 
 bool In(const Box& stencil, int x, int y) {
   return stencil.x_min <= x && x <= stencil.x_max &&  //
@@ -68,7 +68,7 @@ void WindowsEmulateVT100Terminal() {
 }
 #endif
 
-void UpdatePixelStyle(std::wstringstream& ss, Pixel& previous, Pixel& next) {
+void UpdatePixelStyle(std::stringstream& ss, Pixel& previous, Pixel& next) {
   if (next.bold != previous.bold)
     ss << (next.bold ? BOLD_SET : BOLD_RESET);
 
@@ -86,8 +86,8 @@ void UpdatePixelStyle(std::wstringstream& ss, Pixel& previous, Pixel& next) {
 
   if (next.foreground_color != previous.foreground_color ||
       next.background_color != previous.background_color) {
-    ss << L"\x1B[" + next.foreground_color.Print(false) + L"m";
-    ss << L"\x1B[" + next.background_color.Print(true) + L"m";
+    ss << "\x1B[" + next.foreground_color.Print(false) + "m";
+    ss << "\x1B[" + next.background_color.Print(true) + "m";
   }
 
   previous = next;
@@ -152,7 +152,7 @@ Screen::Screen(int dimx, int dimy)
 /// Produce a std::string that can be used to print the Screen on the terminal.
 /// Don't forget to flush stdout. Alternatively, you can use Screen::Print();
 std::string Screen::ToString() {
-  std::wstringstream ss;
+  std::stringstream ss;
 
   Pixel previous_pixel;
   Pixel final_pixel;
@@ -160,35 +160,22 @@ std::string Screen::ToString() {
   for (int y = 0; y < dimy_; ++y) {
     if (y != 0) {
       UpdatePixelStyle(ss, previous_pixel, final_pixel);
-      ss << L"\r\n";
+      ss << "\r\n";
     }
-    for (int x = 0; x < dimx_;) {
+    for (int x = 0; x < dimx_; ++x) {
       auto& pixel = pixels_[y][x];
       UpdatePixelStyle(ss, previous_pixel, pixel);
-
-      int x_inc = 0;
-      for (auto& c : pixel.character) {
-        ss << c;
-        x_inc += wchar_width(c);
-      }
-      x += std::max(x_inc, 1);
+      ss << pixel.character;
     }
   }
 
   UpdatePixelStyle(ss, previous_pixel, final_pixel);
 
-  return to_string(ss.str());
+  return ss.str();
 }
 
 void Screen::Print() {
   std::cout << ToString() << '\0' << std::flush;
-}
-
-/// @brief Access a character a given position.
-/// @param x The character position along the x-axis.
-/// @param y The character position along the y-axis.
-wchar_t& Screen::at(int x, int y) {
-  return PixelAt(x, y).character[0];
 }
 
 /// @brief Access a Pixel at a given position.
@@ -246,21 +233,21 @@ void Screen::ApplyShader() {
   // Merge box characters togethers.
   for (int y = 1; y < dimy_; ++y) {
     for (int x = 1; x < dimx_; ++x) {
-      wchar_t& left = at(x - 1, y);
-      wchar_t& top = at(x, y - 1);
-      wchar_t& cur = at(x, y);
+      std::string& left = PixelAt(x - 1, y).character;
+      std::string& top = PixelAt(x, y - 1).character;
+      std::string& cur = PixelAt(x, y).character;
 
       // Left vs current
-      if (cur == U'│' && left == U'─') cur = U'┤';
-      if (cur == U'─' && left == U'│') left = U'├';
-      if (cur == U'├' && left == U'─') cur = U'┼';
-      if (cur == U'─' && left == U'┤') left = U'┼';
+      if (cur == "│" && left == "─") cur = "┤";
+      if (cur == "─" && left == "│") left = "├";
+      if (cur == "├" && left == "─") cur = "┼";
+      if (cur == "─" && left == "┤") left = "┼";
 
       // Top vs current
-      if (cur == U'─' && top == U'│') cur = U'┴';
-      if (cur == U'│' && top == U'─') top = U'┬';
-      if (cur == U'┬' && top == U'│') cur = U'┼';
-      if (cur == U'│' && top == U'┴') top = U'┼';
+      if (cur == "─" && top == "│") cur = "┴";
+      if (cur == "│" && top == "─") top = "┬";
+      if (cur == "┬" && top == "│") cur = "┼";
+      if (cur == "│" && top == "┴") top = "┼";
     }
   }
 }

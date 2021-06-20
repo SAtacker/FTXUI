@@ -12,20 +12,31 @@
 
 namespace ftxui {
 
-static wchar_t simple_border_charset[] = L"┌┐└┘─│┬┴┤├";
+static std::string charset[] = {
+    // Corner:
+    "┌",
+    "┐",
+    "└",
+    "┘",
+    // Edge:
+    "─",
+    "│",
+    // T-join
+    "┬",
+    "┴",
+    "┤",
+    "├",
+};
 
 class Border : public Node {
  public:
-  Border(Elements children)
-      : Node(std::move(children)),
-        charset(std::begin(simple_border_charset),
-                std::end(simple_border_charset)) {}
+  Border(Elements children) : Node(std::move(children)), has_pixel_(false) {}
   Border(Elements children, Pixel pixel)
-      : Node(std::move(children)), charset_pixel(10, pixel) {}
+      : Node(std::move(children)), has_pixel_(true), pixel_(pixel) {}
   ~Border() override {}
 
-  std::vector<Pixel> charset_pixel;
-  std::vector<wchar_t> charset;
+  const bool has_pixel_;
+  Pixel pixel_;
 
   void ComputeRequirement() override {
     Node::ComputeRequirement();
@@ -67,24 +78,26 @@ class Border : public Node {
     if (box_.x_min >= box_.x_max || box_.y_min >= box_.y_max)
       return;
 
-    if (!charset.empty())
-      RenderPixel(screen);
-    else
+    if (has_pixel_)
       RenderChar(screen);
+    else
+      RenderPixel(screen);
   }
 
   void RenderPixel(Screen& screen) {
-    screen.at(box_.x_min, box_.y_min) = charset[0];
-    screen.at(box_.x_max, box_.y_min) = charset[1];
-    screen.at(box_.x_min, box_.y_max) = charset[2];
-    screen.at(box_.x_max, box_.y_max) = charset[3];
+    // Corners.
+    screen.PixelAt(box_.x_min, box_.y_min).character = charset[0];
+    screen.PixelAt(box_.x_max, box_.y_min).character = charset[1];
+    screen.PixelAt(box_.x_min, box_.y_max).character = charset[2];
+    screen.PixelAt(box_.x_max, box_.y_max).character = charset[3];
+    // Edges:
     for (float x = box_.x_min + 1; x < box_.x_max; ++x) {
-      screen.at(x, box_.y_min) = charset[4];
-      screen.at(x, box_.y_max) = charset[4];
+      screen.PixelAt(x, box_.y_min).character = charset[4];
+      screen.PixelAt(x, box_.y_max).character = charset[4];
     }
     for (float y = box_.y_min + 1; y < box_.y_max; ++y) {
-      screen.at(box_.x_min, y) = charset[5];
-      screen.at(box_.x_max, y) = charset[5];
+      screen.PixelAt(box_.x_min, y).character = charset[5];
+      screen.PixelAt(box_.x_max, y).character = charset[5];
     }
 
     // Draw title.
@@ -93,17 +106,17 @@ class Border : public Node {
   }
 
   void RenderChar(Screen& screen) {
-    screen.PixelAt(box_.x_min, box_.y_min) = charset_pixel[0];
-    screen.PixelAt(box_.x_max, box_.y_min) = charset_pixel[1];
-    screen.PixelAt(box_.x_min, box_.y_max) = charset_pixel[2];
-    screen.PixelAt(box_.x_max, box_.y_max) = charset_pixel[3];
+    screen.PixelAt(box_.x_min, box_.y_min) = pixel_;
+    screen.PixelAt(box_.x_max, box_.y_min) = pixel_;
+    screen.PixelAt(box_.x_min, box_.y_max) = pixel_;
+    screen.PixelAt(box_.x_max, box_.y_max) = pixel_;
     for (float x = box_.x_min + 1; x < box_.x_max; ++x) {
-      screen.PixelAt(x, box_.y_min) = charset_pixel[4];
-      screen.PixelAt(x, box_.y_max) = charset_pixel[4];
+      screen.PixelAt(x, box_.y_min) = pixel_;
+      screen.PixelAt(x, box_.y_max) = pixel_;
     }
     for (float y = box_.y_min + 1; y < box_.y_max; ++y) {
-      screen.PixelAt(box_.x_min, y) = charset_pixel[5];
-      screen.PixelAt(box_.x_max, y) = charset_pixel[5];
+      screen.PixelAt(box_.x_min, y) = pixel_;
+      screen.PixelAt(box_.x_max, y) = pixel_;
     }
   }
 };

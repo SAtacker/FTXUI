@@ -18,10 +18,11 @@ using Element = std::shared_ptr<Node>;
 /// @brief A unicode character and its associated style.
 /// @ingroup screen
 struct Pixel {
-  // The graphemes stored into the pixel. To support combining characters,
-  // like: a⃦, this can potentially contains multiple codepoitns.
-  // Required: character.size() >= 1;
-  std::wstring character = L" ";
+  // The grapheme displayed in the Cell. This is stored as an UTF8 encoded
+  // string. To support combining characters, like: a⃦, this can potentially
+  // contains multiple codepoints. Small object allocations avoids allocations
+  // in most cases. There are no allocations for up to 22 bytes.
+  std::string character = " ";
 
   // Colors:
   Color background_color = Color::Default;
@@ -34,6 +35,13 @@ struct Pixel {
   bool inverted : 1;
   bool underlined : 1;
 
+  // ---------------------------------------------------------------------------
+  // Typical memory layout of a pixel: 48 byte.
+  // ┌─────────┬────────────────┬────────────────┬──────┬───────┐
+  // │character│background_color│foreground_color│style │padding│
+  // ├─────────┼────────────────┼────────────────┼──────┼───────┤
+  // │32 bytes │4 bytes         │4 bytes         │1 byte│7 bytes│
+  // └─────────┴────────────────┴────────────────┴──────┴───────┘
   Pixel()
       : blink(false),
         bold(false),
@@ -65,7 +73,6 @@ class Screen {
   static Screen Create(Dimension width, Dimension height);
 
   // Node write into the screen using Screen::at.
-  wchar_t& at(int x, int y);
   Pixel& PixelAt(int x, int y);
 
   // Convert the screen into a printable string in the terminal.

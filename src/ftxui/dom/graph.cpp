@@ -10,7 +10,9 @@
 
 namespace ftxui {
 
-const wchar_t charset[] = L" ▗▐▖▄▟▌▙█";
+const char charset[][4] = {
+    " ", "▗", "▐", "▖", "▄", "▟", "▌", "▙", "█",
+};
 
 class Graph : public Node {
  public:
@@ -38,8 +40,7 @@ class Graph : public Node {
         int yy = 2 * y;
         int i_1 = yy < height_1 ? 0 : yy == height_1 ? 3 : 6;
         int i_2 = yy < height_2 ? 0 : yy == height_2 ? 1 : 2;
-        wchar_t pix = charset[i_1 + i_2];
-        screen.at(x, y) = pix;
+        screen.PixelAt(x, y).character = charset[i_1 + i_2];
       }
     }
   }

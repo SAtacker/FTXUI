@@ -30,12 +30,16 @@ class Text : public Node {
       return;
     for (wchar_t c : text_) {
       const int width = wchar_width(c);
+      std::wstring cc;
+      cc += c;
       if (width >= 1) {
-        if (x > box_.x_max)
+        if (x + width > box_.x_max + 1)
           return;
-        screen.PixelAt(x, y).character = c;
+        screen.PixelAt(x, y).character = to_string(cc);
+        if (width == 2)
+          screen.PixelAt(x + 1, y).character = "";
       } else {
-        screen.PixelAt(x - 1, y).character += c;
+        screen.PixelAt(x - 1, y).character += to_string(cc);
       }
       x += std::max(width, 0);
     }
@@ -66,7 +70,9 @@ class VText : public Node {
     for (wchar_t c : text_) {
       if (y > box_.y_max)
         return;
-      screen.at(x, y) = c;
+      std::wstring cc;
+      cc += c;
+      screen.PixelAt(x, y).character = to_string(cc);
       y += 1;
     }
   }

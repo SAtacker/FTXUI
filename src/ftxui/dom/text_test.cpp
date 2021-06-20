@@ -70,7 +70,7 @@ TEST(TextTest, CJK_2) {
   Render(screen, element);
   EXPECT_EQ(
       "┌───┐\r\n"
-      "│测试\r\n"
+      "│测 │\r\n"
       "└───┘",
       screen.ToString());
 }
