@@ -26,7 +26,7 @@ option(FTXUI_ENABLE_INSTALL "Generate the install target" ON)
 
 find_package(Threads)
 
-add_library(screen STATIC
+set(screen_files
   src/ftxui/screen/box.cpp
   src/ftxui/screen/color.cpp
   src/ftxui/screen/color_info.cpp
@@ -41,7 +41,7 @@ add_library(screen STATIC
   include/ftxui/screen/string.hpp
 )
 
-add_library(dom STATIC
+set(dom_files
   include/ftxui/dom/elements.hpp
   include/ftxui/dom/node.hpp
   include/ftxui/dom/requirement.hpp
@@ -74,7 +74,7 @@ add_library(dom STATIC
   src/ftxui/dom/vbox.cpp
 )
 
-add_library(component STATIC
+set(component_files
   include/ftxui/component/button.hpp
   include/ftxui/component/captured_mouse.hpp
   include/ftxui/component/checkbox.hpp
@@ -106,24 +106,31 @@ add_library(component STATIC
   src/ftxui/component/terminal_input_parser.cpp
   src/ftxui/component/terminal_input_parser.hpp
   src/ftxui/component/toggle.cpp
-)
+) 
+
+add_library(screen STATIC ${screen_files})
+add_library(dom STATIC ${dom_files})
+add_library(component STATIC ${component_files})
+add_library(ftxui STATIC ${screen_files} ${dom_files} ${component_files})
 
 add_library(ftxui::screen ALIAS screen)
 add_library(ftxui::dom ALIAS dom)
 add_library(ftxui::component ALIAS component)
+add_library(ftxui::ftxui ALIAS ftxui)
 
 target_link_libraries(dom PUBLIC screen)
 target_link_libraries(component PUBLIC dom Threads::Threads)
-  find_program(iwyu_path NAMES include-what-you-use iwyu)
-  if(iwyu_path)
-    set_property(TARGET ${lib}
-      PROPERTY ${iwyu_path} -Xiwyu
-        --mapping_file ${CMAKE_CURRENT_SOURCE_DIR}/iwyu.impl
-    )
-  endif()
+target_link_libraries(ftxui PUBLIC dom Threads::Threads)
+find_program(iwyu_path NAMES include-what-you-use iwyu)
+if(iwyu_path)
+  set_property(TARGET ${lib}
+    PROPERTY ${iwyu_path} -Xiwyu
+      --mapping_file ${CMAKE_CURRENT_SOURCE_DIR}/iwyu.impl
+  )
+endif()
 
 
-foreach(lib screen dom component)
+foreach(lib screen dom component ftxui)
   target_include_directories(${lib}
     PUBLIC
       $<INSTALL_INTERFACE:include>
@@ -179,6 +186,12 @@ if(FTXUI_ENABLE_INSTALL)
       ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR}/ftxui/
   )
 
+  install(TARGETS ftxui
+      EXPORT ftxui-export
+      LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
+      ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR}
+  )
+
   install(DIRECTORY include/ftxui DESTINATION ${CMAKE_INSTALL_INCLUDEDIR})
 
   include(CMakePackageConfigHelpers)
@@ -203,7 +216,7 @@ if(FTXUI_ENABLE_INSTALL)
   )
 endif()
 
-export(TARGETS screen dom component NAMESPACE ftxui::
+export(TARGETS screen dom component ftxui NAMESPACE ftxui::
   FILE ${PROJECT_BINARY_DIR}/ftxui-targets.cmake)
 
 
@@ -218,7 +231,11 @@ if (FTXUI_BUILD_TESTS AND ${CMAKE_VERSION} VERSION_GREATER "3.11.4")
     GIT_REPOSITORY "https://github.com/google/googletest"
     GIT_TAG        23ef29555ef4789f555f1ba8c51b4c52975f0907
   )
-  FetchContent_MakeAvailable(googletest)
+  FetchContent_GetProperties(googletest)
+  if(NOT googletest_POPULATED)
+    FetchContent_Populate(googletest)
+    add_subdirectory(${googletest_SOURCE_DIR} ${googletest_BINARY_DIR} EXCLUDE_FROM_ALL)
+  endif()
 
   add_executable(tests
     src/ftxui/component/component_test.cpp
@@ -253,7 +270,11 @@ if (FTXUI_BUILD_TESTS AND ${CMAKE_VERSION} VERSION_GREATER "3.11.4")
       GIT_REPOSITORY "https://github.com/google/benchmark"
       GIT_TAG 62937f91b5c763a8e119d0c20c67b87bde8eff1c 
     )
-    FetchContent_MakeAvailable(googlebenchmark)
+    FetchContent_GetProperties(googlebenchmark)
+    if(NOT googlebenchmark_POPULATED)
+      FetchContent_Populate(googlebenchmark)
+      add_subdirectory(${googlebenchmark_SOURCE_DIR} ${googlebenchmark_BINARY_DIR} EXCLUDE_FROM_ALL)
+    endif()
 
     add_executable(ftxui_benchmark
       src/ftxui/dom/benchmark_test.cpp
