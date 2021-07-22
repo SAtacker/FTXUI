@@ -2,6 +2,7 @@
 #define FTXUI_COMPONENT_BASE_HPP
 
 #include <memory>  // for unique_ptr
+#include <sstream>
 #include <vector>  // for vector
 
 #include "ftxui/component/captured_mouse.hpp"  // for CaptureMouse
@@ -63,10 +64,16 @@ class ComponentBase {
   // Configure all the ancestors to give focus to this component.
   void TakeFocus();
 
+  ComponentBase& operator<<(std::string whatev) {
+    debugText << whatev;
+    return *this;
+  }
+
  protected:
   CapturedMouse CaptureMouse(const Event& event);
 
   std::vector<Component> children_;
+  std::stringstream debugText;
 
  private:
   ComponentBase* parent_ = nullptr;

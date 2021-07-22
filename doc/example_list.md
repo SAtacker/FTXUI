@@ -3,6 +3,7 @@
 @example ./examples/component/checkbox.cpp
 @example ./examples/component/checkbox_in_frame.cpp
 @example ./examples/component/composition.cpp
+@example ./examples/component/debug.cpp
 @example ./examples/component/gallery.cpp
 @example ./examples/component/homescreen.cpp
 @example ./examples/component/input.cpp

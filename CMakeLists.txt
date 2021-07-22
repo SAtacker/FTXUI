@@ -97,6 +97,7 @@ add_library(component STATIC
   src/ftxui/component/terminal_input_parser.cpp
   src/ftxui/component/terminal_input_parser.hpp
   src/ftxui/component/toggle.cpp
+  src/ftxui/component/debug.cpp
 )
 
 target_link_libraries(dom

@@ -52,6 +52,8 @@ Component ResizableSplitBottom(Component main, Component back, int* main_size);
 Component Renderer(Component child, std::function<Element()>);
 Component Renderer(std::function<Element()>);
 Component CatchEvent(Component child, std::function<bool(Event)>);
+Component Debug(ConstStringRef ref = L"Debug");
+Component operator<<(Component deb, std::string whatev);
 
 namespace Container {
 Component Vertical(Components children);
